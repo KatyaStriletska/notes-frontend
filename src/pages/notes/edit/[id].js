@@ -6,7 +6,10 @@ import Head from "next/head";
 export default function EditNotePage({ note }) {
   const router = useRouter();
   const noteId = note?.id;
-
+  const { id, origin } = router.query;
+  console.log("--- Edit Page ---");
+  console.log("Received note prop:", note);
+  console.log("Router query:", router.query);
   const [title, setTitle] = useState(note?.title || "");
   const [content, setContent] = useState(note?.content || "");
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +26,7 @@ export default function EditNotePage({ note }) {
       return;
     }
 
-    const apiUrl = `http://localhost:3000/notes/${noteId}`;
+    const apiUrl = `http://localhost:3001/notes/${noteId}`;
 
     try {
       const res = await fetch(apiUrl, {
@@ -43,7 +46,10 @@ export default function EditNotePage({ note }) {
         throw new Error(errorMsg);
       }
 
-      router.push(`/notes/${noteId}`);
+      const redirectPath =
+        origin === "ssr" ? `/notes-ssr/${noteId}` : `/notes/${noteId}`;
+      console.log(`Update successful. Redirecting to: ${redirectPath}`);
+      router.push(redirectPath);
     } catch (err) {
       console.error("Error updating note:", err);
       setError(err.message || "An unexpected error occurred.");
@@ -64,6 +70,8 @@ export default function EditNotePage({ note }) {
       </div>
     );
   }
+  const cancelPath =
+    origin === "ssr" ? `/notes-ssr/${noteId}` : `/notes/${noteId}`;
 
   return (
     <>
@@ -124,7 +132,7 @@ export default function EditNotePage({ note }) {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-end items-center mt-6">
               <Link
-                href={`/notes/${noteId}`}
+                href={cancelPath}
                 className={`text-gray-600 hover:text-gray-800 text-sm sm:order-1 ${
                   isLoading ? "pointer-events-none opacity-50" : ""
                 }`}
@@ -148,7 +156,7 @@ export default function EditNotePage({ note }) {
 
 export async function getServerSideProps(context) {
   const { id } = context.params;
-  const apiUrl = `http://localhost:3000/notes/${id}`;
+  const apiUrl = `http://localhost:3001/notes/${id}`;
 
   console.log(`[SSR] Fetching note data for editing ID: ${id}...`);
 

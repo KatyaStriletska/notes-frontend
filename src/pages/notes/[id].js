@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import Head from "next/head";
-
+import { useState } from "react";
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
   try {
@@ -19,7 +19,7 @@ const formatDate = (dateString) => {
 
 export default function NoteDetailPage({ note }) {
   const router = useRouter();
-
+  const [isDeleting, setIsDeleting] = useState(false);
   if (router.isFallback) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -37,8 +37,31 @@ export default function NoteDetailPage({ note }) {
   };
 
   const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this note?")) {
-      alert("Delete functionality not implemented yet.");
+    if (confirm(`Are you sure you want to delete note "${note.title}"?`)) {
+      setIsDeleting(true);
+
+      const apiUrl = `http://localhost:3001/notes/${note.id}`;
+
+      try {
+        const res = await fetch(apiUrl, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) {
+          let errorMsg = `Failed to delete note (status: ${res.status})`;
+          try {
+            const errorData = await res.json();
+            errorMsg = errorData.message || errorMsg;
+          } catch (e) {}
+          throw new Error(errorMsg);
+        }
+        console.log("Note deleted successfully!");
+        router.push("/notes");
+      } catch (error) {
+        alert("Error deleting note");
+        console.error("Error deleting note:", error);
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -65,17 +88,18 @@ export default function NoteDetailPage({ note }) {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <button
-              onClick={handleEdit}
-              className="w-full sm:w-auto bg-yellow-500 text-white px-6 py-2 rounded-md font-medium shadow-sm hover:bg-yellow-600 transition duration-150 ease-in-out"
+            <Link
+              href={`/notes/edit/${note.id}`}
+              className="w-full sm:w-auto text-center bg-yellow-500 text-white px-6 py-2 rounded-md font-medium shadow-sm hover:bg-yellow-600 transition duration-150 ease-in-out"
             >
               Edit Note
-            </button>
+            </Link>
             <button
               onClick={handleDelete}
-              className="w-full sm:w-auto bg-red-600 text-white px-6 py-2 rounded-md font-medium shadow-sm hover:bg-red-700 transition duration-150 ease-in-out"
+              disabled={isDeleting}
+              className="w-full sm:w-auto bg-red-600 text-white px-6 py-2 rounded-md font-medium shadow-sm hover:bg-red-700 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete Note
+              {isDeleting ? "Deleting..." : "Delete Note"}{" "}
             </button>
           </div>
 
@@ -93,7 +117,7 @@ export default function NoteDetailPage({ note }) {
 
 export async function getStaticPaths() {
   console.log("[Frontend Build] Fetching note IDs for paths...");
-  const apiUrl = "http://localhost:3000/notes";
+  const apiUrl = "http://localhost:3001/notes";
   try {
     const res = await fetch(apiUrl);
     if (!res.ok) throw new Error(`API Error: ${res.status}`);
@@ -117,7 +141,7 @@ export async function getStaticPaths() {
 export async function getStaticProps(context) {
   const id = context.params.id;
   console.log(`[Frontend Build] Fetching note data for ID: ${id}...`);
-  const apiUrl = `http://localhost:3000/notes/${id}`;
+  const apiUrl = `http://localhost:3001/notes/${id}`;
   try {
     const res = await fetch(apiUrl);
 

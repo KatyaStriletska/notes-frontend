@@ -1,32 +1,33 @@
 import Link from "next/link";
 import Head from "next/head";
 
-export default function NotesListPage({ notes }) {
+export default function NotesSsrListPage({ notes }) {
   return (
     <>
       <Head>
-        <title>Мої нотатки</title>
+        <title>All Notes (SSR) - Notes App</title>
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-4 sm:p-8">
+        {" "}
         <div className="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg">
           <h1 className="text-3xl sm:text-4xl font-bold mb-6 sm:mb-8 text-center text-gray-800">
-            My Notes (SSG)
+            My Notes <span className="text-purple-600">(SSR Version)</span>
           </h1>
 
           {!notes || notes.length === 0 ? (
             <div className="text-center text-gray-500">
-              <p>No notes found yet.</p>
-              <p>Maybe the API is down or has no data?</p>
+              <p>No notes found. Maybe the API is down or has no data?</p>
             </div>
           ) : (
             <ul className="space-y-4">
               {notes.map((note) => (
                 <li
                   key={note.id}
-                  className="border border-gray-200 rounded-lg transition duration-200 ease-in-out hover:shadow-md hover:border-blue-300"
+                  className="border border-gray-200 rounded-lg transition duration-200 ease-in-out hover:shadow-md hover:border-purple-300"
                 >
-                  <Link href={`/notes/${note.id}`} className="block p-4">
-                    <h2 className="text-xl font-semibold text-blue-700 hover:text-blue-900 mb-1 truncate">
+                  {" "}
+                  <Link href={`/notes-ssr/${note.id}`} className="block p-4">
+                    <h2 className="text-xl font-semibold text-purple-700 hover:text-purple-900 mb-1 truncate">
                       {note.title || `Note ${note.id}`}
                     </h2>
                     <p className="text-gray-600 text-sm truncate">
@@ -53,8 +54,8 @@ export default function NotesListPage({ notes }) {
   );
 }
 
-export async function getStaticProps() {
-  console.log("[Frontend Build] Fetching list of notes from API...");
+export async function getServerSideProps(context) {
+  console.log("[SSR] Fetching list of notes from API...");
   const apiUrl = "http://localhost:3001/notes";
   try {
     const res = await fetch(apiUrl);
@@ -63,9 +64,10 @@ export async function getStaticProps() {
     }
     const notesData = await res.json();
     const notes = Array.isArray(notesData?.items) ? notesData.items : [];
+
     return { props: { notes } };
   } catch (error) {
-    console.error("[Frontend Build] Failed to fetch notes:", error.message);
+    console.error("[SSR] Failed to fetch notes:", error.message);
     return { props: { notes: [] } };
   }
 }
